@@ -1,0 +1,7 @@
+RELATORIO DE USUARIOS
+
+1 - Lucas - 16 anos
+2 - Marcos - 18 anos
+
+Total usuarios: 2
+Media idade: 17.0
