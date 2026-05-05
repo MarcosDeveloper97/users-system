@@ -24,42 +24,160 @@ function salvarDados() {
     fs.writeFileSync("usuarios.json", JSON.stringify(usuario, null, 2));
 }
 
+function cadastrarUsuario() {
+    let nome = prompt("Digite seu nome: ");
+    let idade = Number(prompt("Digite sua idade: "));
+
+    let erro = false;
+
+    if (nome.trim() == "") {
+        console.log("Nome inválido");
+        erro = true;
+    }
+
+    if (isNaN(idade) || idade <= 0) {
+        console.log("Idade inválida");
+        erro = true;
+    }
+
+    if (erro) return;
+
+    usuario.push({
+        id: Date.now(),
+        nome: nome,
+        idade: idade
+    });
+
+    salvarDados();
+    console.log("Usuario cadastrado com sucesso");
+}
+
 function listarUsuarios() {
 
     if (usuario.length == 0) {
         console.log("Nenhum usuario cadastrado");
-    } 
-    
-    else {
+        return;
+    }
 
-        console.log("\n1- Ordem A-Z");
-        console.log("2- Menor idade");
-        console.log("3- Mais recente");
+    console.log("\n1- Ordem A-Z");
+    console.log("2- Menor idade");
+    console.log("3- Mais recente");
 
-        let ordem = Number(prompt("Escolha: "));
+    let ordem = Number(prompt("Escolha: "));
 
-        if (ordem == 1) {
-            usuario.sort((a, b) => a.nome.localeCompare(b.nome));
-        }
+    if (ordem == 1) {
+        usuario.sort((a, b) => a.nome.localeCompare(b.nome));
+    }
+    else if (ordem == 2) {
+        usuario.sort((a, b) => a.idade - b.idade);
+    }
+    else if (ordem == 3) {
+        usuario.sort((a, b) => b.id - a.id);
+    }
 
-        else if (ordem == 2) {
-            usuario.sort((a, b) => a.idade - b.idade);
-        }
-
-        else if (ordem == 3) {
-            usuario.sort((a, b) => b.id - a.id);
-        }
-
-        for (let i = 0; i < usuario.length; i++) {
-            console.log(
-                (i + 1) +
-                " - ID: " + usuario[i].id +
-                " | Nome: " + usuario[i].nome +
-                " | Idade: " + usuario[i].idade
-            );
-        }
+    for (let i = 0; i < usuario.length; i++) {
+        console.log(
+            (i + 1) +
+            " - ID: " + usuario[i].id +
+            " | Nome: " + usuario[i].nome +
+            " | Idade: " + usuario[i].idade
+        );
     }
 }
+
+function buscarUsuario() {
+
+    let busca = prompt("Digite o ID ou Nome: ").toLowerCase();
+    let encontrado = false;
+
+    for (let i = 0; i < usuario.length; i++) {
+
+        if (
+            usuario[i].id == Number(busca) ||
+            usuario[i].nome.toLowerCase().includes(busca)
+        ) {
+
+            console.log("Usuario encontrado");
+            console.log("ID:", usuario[i].id);
+            console.log("Nome:", usuario[i].nome);
+            console.log("Idade:", usuario[i].idade);
+            console.log("--------------");
+
+            encontrado = true;
+        }
+    }
+
+    if (!encontrado) {
+        console.log("Usuario nao encontrado");
+    }
+}
+
+function excluirUsuario() {
+
+    let excluir = Number(prompt("Digite o ID para excluir: "));
+    let encontrado = false;
+
+    for (let i = 0; i < usuario.length; i++) {
+
+        if (usuario[i].id == excluir) {
+
+            let confirmacao = prompt("Tem certeza que deseja excluir? (s/n): ");
+
+            if (confirmacao.toLowerCase() == "s") {
+                usuario.splice(i, 1);
+                salvarDados();
+                console.log("Usuario excluido");
+            } else {
+                console.log("Operacao cancelada");
+            }
+
+            encontrado = true;
+            break;
+        }
+    }
+
+    if (!encontrado) {
+        console.log("Usuario nao encontrado");
+    }
+}
+
+function editarUsuario() {
+
+    let busca = Number(prompt("Digite o ID para editar: "));
+    let encontrado = false;
+
+    for (let i = 0; i < usuario.length; i++) {
+
+        if (usuario[i].id == busca) {
+
+            let confirmacao = prompt("Tem certeza que deseja editar? (s/n): ");
+
+            if (confirmacao.toLowerCase() == "s") {
+
+                let novoNome = prompt("Novo nome: ");
+                let novaIdade = Number(prompt("Nova idade: "));
+
+                usuario[i].nome = novoNome;
+                usuario[i].idade = novaIdade;
+
+                salvarDados();
+
+                console.log("Usuario atualizado");
+
+            } else {
+                console.log("Edicao cancelada");
+            }
+
+            encontrado = true;
+            break;
+        }
+    }
+
+    if (!encontrado) {
+        console.log("Usuario nao encontrado");
+    }
+}
+
 function mostrarEstatisticas() {
 
     if (usuario.length == 0) {
@@ -115,7 +233,6 @@ function gerarRelatorio() {
     }
 
     texto += "\nTotal usuarios: " + usuario.length;
-
     texto += "\nMedia idade: " + (soma / usuario.length).toFixed(1);
 
     fs.writeFileSync("relatorio.txt", texto);
@@ -123,181 +240,39 @@ function gerarRelatorio() {
     console.log("Relatorio gerado com sucesso!");
 }
 
-function fazerbackup(){
-    if(usuario.length == 0){
-        console.log("Nenhum arquivo para backup")
+function fazerBackup() {
+
+    if (usuario.length == 0) {
+        console.log("Nenhum arquivo para backup");
         return;
     }
+
     let data = new Date();
     let nomeArquivo =
-    "backup_" +
-    data.getFullYear() +"-"+
-    (data.getMonth()+ 1)+"-"+
-    data.getDate()+
-    ".Json";
+        "backup_" +
+        data.getFullYear() + "-" +
+        (data.getMonth() + 1) + "-" +
+        data.getDate() +
+        ".json";
 
     fs.writeFileSync(nomeArquivo, JSON.stringify(usuario, null, 2));
 
     console.log("Backup criado:", nomeArquivo);
-
-
 }
 
 while (opcao != 9) {
 
     mostrarMenu();
-
     opcao = Number(prompt("Escolha: "));
 
-    if (opcao == 1) {
-
-       let nome = prompt("Digite seu nome: ");
-       let idade = Number(prompt("Digite sua idade: "));
-
-       let erro = false;
-
-    if (nome.trim() == "") {
-    console.log("Nome inválido");
-    erro = true;
-}
-
-    if (isNaN(idade) || idade <= 0) {
-    console.log("Idade inválida");
-    erro = true;
-}
-
-    if (erro) {
-    continue;
-}
-        usuario.push({
-            id: Date.now(),
-            nome: nome,
-            idade: idade
-        });
-
-        salvarDados();
-
-        console.log("Usuario cadastrado com sucesso");
-    }
-
-    else if (opcao == 2) {
-        listarUsuarios();
-    }
-
-    else if (opcao == 3) {
-
-        let busca = prompt("Digite o ID ou Nome: ").toLowerCase();
-        let encontrado = false;
-
-        for (let i = 0; i < usuario.length; i++) {
-
-            if (
-                usuario[i].id == Number(busca) ||
-                usuario[i].nome.toLowerCase().includes(busca)
-            ) {
-
-                console.log("Usuario encontrado");
-                console.log("ID:", usuario[i].id);
-                console.log("Nome:", usuario[i].nome);
-                console.log("Idade:", usuario[i].idade);
-                console.log("--------------")
-
-                encontrado = true;
-                
-            }
-        }
-
-        if (encontrado == false) {
-            console.log("Usuario nao encontrado");
-        }
-    }
-
-    else if (opcao == 4) {
-
-    let excluir = Number(prompt("Digite o ID para excluir: "));
-    let encontrado = false;
-
-    for (let i = 0; i < usuario.length; i++) {
-
-        if (usuario[i].id == excluir) {
-
-            let confirmacao = prompt("Tem certeza que deseja excluir? (s/n): ");
-
-            if (confirmacao.toLowerCase() == "s") {
-
-                usuario.splice(i, 1);
-                salvarDados();
-                console.log("Usuario excluido");
-
-            } else {
-                console.log("Operacao cancelada");
-            }
-
-            encontrado = true;
-            break;
-        }
-    }
-
-    if (encontrado == false) {
-        console.log("Usuario nao encontrado");
-    }
-}
-
-    else if (opcao == 5) {
-
-        let busca = Number(prompt("Digite o ID para editar: "));
-        let encontrado = false;
-
-        for (let i = 0; i < usuario.length; i++) {
-
-           if (usuario[i].id == busca) {
-
-    let confirmacao = prompt("Tem certeza que deseja editar? (s/n): ");
-
-    if (confirmacao.toLowerCase() == "s") {
-
-        let novoNome = prompt("Novo nome: ");
-        let novaIdade = Number(prompt("Nova idade: "));
-
-        usuario[i].nome = novoNome;
-        usuario[i].idade = novaIdade;
-
-        salvarDados();
-
-        console.log("Usuario atualizado");
-
-    } else {
-        console.log("Edicao cancelada");
-    }
-
-    encontrado = true;
-    break;
-  }
-}
-
-        if (encontrado == false) {
-            console.log("Usuario nao encontrado");
-        }
-    }
-
-    else if (opcao == 6) {
-        mostrarEstatisticas();
-    }
-
-    else if (opcao == 7) {
-        gerarRelatorio();
-    }
-
-    else if (opcao == 8) {
-        fazerbackup();
-    }
-
-
-    else if (opcao == 9) {
-        console.log("Encerrar programa");
-    }
-
-    else {
-        console.log("Opcao invalida");
-    }
+    if (opcao == 1) cadastrarUsuario();
+    else if (opcao == 2) listarUsuarios();
+    else if (opcao == 3) buscarUsuario();
+    else if (opcao == 4) excluirUsuario();
+    else if (opcao == 5) editarUsuario();
+    else if (opcao == 6) mostrarEstatisticas();
+    else if (opcao == 7) gerarRelatorio();
+    else if (opcao == 8) fazerBackup();
+    else if (opcao == 9) console.log("Encerrar programa");
+    else console.log("Opcao invalida");
 }
