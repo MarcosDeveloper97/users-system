@@ -1,34 +1,39 @@
-const fs = require("fs");
-
-let usuarios = [];
-
-if (fs.existsSync("data/usuarios.json")) {
-    usuarios = JSON.parse(fs.readFileSync("data/usuarios.json"));
-}
-
-function salvarDados() {
-    fs.writeFileSync(
-        "data/usuarios.json",
-        JSON.stringify(usuarios, null, 2)
-    );
-}
+const db = require("../database/db");
 
 function listarUsuarios(req, res) {
-    res.json(usuarios);
+    db.all("SELECT * FROM usuarios", [], (erro, rows) => {
+        if (erro) {
+            return res.status(500).json({
+                erro: "Erro ao buscar usuarios"
+            });
+        }
+
+        res.json(rows);
+    });
 }
 
 function buscarUsuario(req, res) {
     const id = Number(req.params.id);
 
-    const usuario = usuarios.find(u => u.id === id);
+    db.get(
+        "SELECT * FROM usuarios WHERE id = ?",
+        [id],
+        (erro, row) => {
+            if (erro) {
+                return res.status(500).json({
+                    erro: "Erro ao buscar usuario"
+                });
+            }
 
-    if (!usuario) {
-        return res.status(404).json({
-            erro: "Usuario nao encontrado"
-        });
-    }
+            if (!row) {
+                return res.status(404).json({
+                    erro: "Usuario nao encontrado"
+                });
+            }
 
-    res.json(usuario);
+            res.json(row);
+        }
+    );
 }
 
 function criarUsuario(req, res) {
@@ -46,58 +51,78 @@ function criarUsuario(req, res) {
         });
     }
 
-    const novoUsuario = {
-        id: Date.now(),
-        nome,
-        idade
-    };
+    db.run(
+        "INSERT INTO usuarios (nome, idade) VALUES (?, ?)",
+        [nome, idade],
+        function (erro) {
+            if (erro) {
+                return res.status(500).json({
+                    erro: "Erro ao criar usuario"
+                });
+            }
 
-    usuarios.push(novoUsuario);
-
-    salvarDados();
-
-    res.status(201).json(novoUsuario);
+            res.status(201).json({
+                id: this.lastID,
+                nome,
+                idade
+            });
+        }
+    );
 }
 
 function atualizarUsuario(req, res) {
     const id = Number(req.params.id);
-
     const { nome, idade } = req.body;
 
-    const usuario = usuarios.find(u => u.id === id);
+    db.run(
+        "UPDATE usuarios SET nome = ?, idade = ? WHERE id = ?",
+        [nome, idade, id],
+        function (erro) {
+            if (erro) {
+                return res.status(500).json({
+                    erro: "Erro ao atualizar"
+                });
+            }
 
-    if (!usuario) {
-        return res.status(404).json({
-            erro: "Usuario nao encontrado"
-        });
-    }
+            if (this.changes === 0) {
+                return res.status(404).json({
+                    erro: "Usuario nao encontrado"
+                });
+            }
 
-    usuario.nome = nome;
-    usuario.idade = idade;
-
-    salvarDados();
-
-    res.json(usuario);
+            res.json({
+                id,
+                nome,
+                idade
+            });
+        }
+    );
 }
 
 function deletarUsuario(req, res) {
     const id = Number(req.params.id);
 
-    const index = usuarios.findIndex(u => u.id === id);
+    db.run(
+        "DELETE FROM usuarios WHERE id = ?",
+        [id],
+        function (erro) {
+            if (erro) {
+                return res.status(500).json({
+                    erro: "Erro ao deletar"
+                });
+            }
 
-    if (index === -1) {
-        return res.status(404).json({
-            erro: "Usuario nao encontrado"
-        });
-    }
+            if (this.changes === 0) {
+                return res.status(404).json({
+                    erro: "Usuario nao encontrado"
+                });
+            }
 
-    usuarios.splice(index, 1);
-
-    salvarDados();
-
-    res.json({
-        mensagem: "Usuario excluido"
-    });
+            res.json({
+                mensagem: "Usuario excluido"
+            });
+        }
+    );
 }
 
 module.exports = {
